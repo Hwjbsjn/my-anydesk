@@ -12,15 +12,15 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
           ./AnyDesk.exe --install "C:\AnyDesk" --start-with-win --silent
-          Start-Sleep -Seconds 20
-          echo "MR.English2008" | & "C:\AnyDesk\AnyDesk.exe" --set-password _full_access
+          Start-Sleep -Seconds 30
           $ID = & "C:\AnyDesk\AnyDesk.exe" --get-id
+          echo "MR.English2008" | & "C:\AnyDesk\AnyDesk.exe" --set-password _full_access
           Write-Host "========================================"
           Write-Host "SUCCESS! ANYDESK ID: $ID"
           Write-Host "PASSWORD: MR.English2008"
           Write-Host "========================================"
-          $endTime = (Get-Date).AddHours(6)
-          while ((Get-Date) -lt $endTime) {
-              Write-Host "Online | ID: $ID | $(Get-Date)"
-              Start-Sleep -Seconds 300
+          while ($true) {
+              $currentID = & "C:\AnyDesk\AnyDesk.exe" --get-id
+              Write-Host "Online | ID: $currentID | $(Get-Date)"
+              Start-Sleep -Seconds 60
           }
