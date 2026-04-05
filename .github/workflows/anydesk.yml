@@ -1,4 +1,4 @@
-name: AnyDesk Ultimate Fix
+name: Windows RDP via Ngrok
 
 on:
   workflow_dispatch:
@@ -7,38 +7,31 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1. Install & Get ID
+      - name: 1. Setup Remote Desktop
         shell: powershell
         run: |
-          # تحميل البرنامج
-          Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          net user runneradmin "Abdu1234@"
+          add-localgroupmember -group "Remote Management Users" -member "runneradmin"
           
-          # تثبيت صامت في مسار النظام
-          Start-Process "./AnyDesk.exe" -ArgumentList "--install C:\AnyDesk --start-with-win --silent" -Wait
-          
-          # انتظار 30 ثانية عشان السيرفس تشتغل
-          Start-Sleep -Seconds 30
-          
-          # تعيين كلمة المرور
-          echo "MR.English2008" | & "C:\AnyDesk\AnyDesk.exe" --set-password _full_access
-          
-          # محاولة استخراج الـ ID بقوة
-          $ID = ""
-          for ($i=1; $i -le 10; $i++) {
-              $ID = & "C:\AnyDesk\AnyDesk.exe" --get-id
-              if ($ID) { break }
-              Write-Host "Waiting for ID... Attempt $i"
-              Start-Sleep -Seconds 10
-          }
-          
+      - name: 2. Install Ngrok & Connect
+        shell: powershell
+        run: |
+          Invoke-WebRequest https://bin.equinox.io/c/b34edq6tiW5/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+          Expand-Archive ngrok.zip
+          ./ngrok.exe config add-authtoken 3BxZEFKfK8T50p2XmP8A0_3NHe7W8B5Z8Z8Z8Z8Z8Z # تأكد من الرمز كامل
+          Start-Process ./ngrok.exe -ArgumentList "tcp 3389"
+          Start-Sleep -Seconds 15
+          $tunnels = Invoke-WebRequest http://localhost:4040/api/tunnels | ConvertFrom-Json
+          $address = $tunnels.tunnels[0].public_url
           Write-Host "========================================"
-          Write-Host "SUCCESS! YOUR ANYDESK ID IS: $ID"
-          Write-Host "PASSWORD IS: MR.English2008"
+          Write-Host "SUCCESS! CONNECT TO: $address"
+          Write-Host "USER: runneradmin"
+          Write-Host "PASS: Abdu1234@"
           Write-Host "========================================"
           
-          # الحفاظ على الجلسة مفتوحة لمدة 6 ساعات
+      - name: 3. Keep Alive (6 Hours)
+        run: |
           $timeout = (Get-Date).AddHours(6)
-          while ((Get-Date) -lt $timeout) {
-              Write-Host "Session Active | ID: $ID | $(Get-Date)"
-              Start-Sleep -Seconds 120
-          }
+          while ((Get-Date) -lt $timeout) { Start-Sleep 60 }
