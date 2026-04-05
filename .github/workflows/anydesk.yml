@@ -1,0 +1,26 @@
+name: AnyDesk Official CLI Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-anydesk:
+    runs-on: windows-latest
+    steps:
+      - name: Download and Install AnyDesk
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://download.anydesk.com/AnyDesk.exe" -OutFile "AnyDesk.exe"
+          ./AnyDesk.exe --install "C:\AnyDesk" --start-with-win --silent
+          Start-Sleep -Seconds 20
+          echo "MR.English2008" | & "C:\AnyDesk\AnyDesk.exe" --set-password _full_access
+          $ID = & "C:\AnyDesk\AnyDesk.exe" --get-id
+          Write-Host "========================================"
+          Write-Host "SUCCESS! ANYDESK ID: $ID"
+          Write-Host "PASSWORD: MR.English2008"
+          Write-Host "========================================"
+          $endTime = (Get-Date).AddHours(6)
+          while ((Get-Date) -lt $endTime) {
+              Write-Host "Online | ID: $ID | $(Get-Date)"
+              Start-Sleep -Seconds 300
+          }
