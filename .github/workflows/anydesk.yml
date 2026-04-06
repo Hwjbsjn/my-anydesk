@@ -14,15 +14,14 @@ jobs:
           net user runneradmin "Abdu1234@"
           add-localgroupmember -group "Remote Management Users" -member "runneradmin"
           
-      - name: 2. Install Ngrok
+      - name: 2. Install Ngrok via Choco
         run: |
-          curl -L -o ngrok.zip https://bin.equinox.io/c/b34edq6tiW5/ngrok-v3-stable-windows-amd64.zip
-          Expand-Archive ngrok.zip
+          choco install ngrok
           
       - name: 3. Start Connection
         run: |
-          ./ngrok.exe config add-authtoken 3BxZEFeh2YvU8EpfLgxMSNrQIIp_73TkNgdBFJq5UpgnZU2ye
-          Start-Process ./ngrok.exe -ArgumentList "tcp 3389"
+          ngrok config add-authtoken 3BxZEFeh2YvU8EpfLgxMSNrQIIp_73TkNgdBFJq5UpgnZU2ye
+          Start-Process ngrok -ArgumentList "tcp 3389"
           Start-Sleep -Seconds 15
           $tunnels = Invoke-WebRequest http://localhost:4040/api/tunnels | ConvertFrom-Json
           $address = $tunnels.tunnels[0].public_url
