@@ -21,8 +21,10 @@ jobs:
       - name: 3. Start Connection
         run: |
           ngrok config add-authtoken 3BxZEFeh2YvU8EpfLgxMSNrQIIp_73TkNgdBFJq5UpgnZU2ye
+          # تشغيل البرنامج في الخلفية
           Start-Process ngrok -ArgumentList "tcp 3389"
-          Start-Sleep -Seconds 15
+          # أهم خطوة: الانتظار عشان ما يطلع خطأ Refused
+          Start-Sleep -Seconds 30
           $tunnels = Invoke-WebRequest http://localhost:4040/api/tunnels | ConvertFrom-Json
           $address = $tunnels.tunnels[0].public_url
           Write-Host "========================================"
