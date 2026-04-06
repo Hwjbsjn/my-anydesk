@@ -1,4 +1,4 @@
-name: Windows RDP via Ngrok
+name: Windows RDP Final Win
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: 1. Setup Remote Desktop
+      - name: 1. Setup RDP
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -15,25 +15,38 @@ jobs:
           add-localgroupmember -group "Remote Management Users" -member "runneradmin"
           
       - name: 2. Install Ngrok via Choco
-        run: |
-          choco install ngrok
+        run: choco install ngrok
           
-      - name: 3. Start Connection
+      - name: 3. Start Connection (Ngrok)
+        shell: powershell
         run: |
+          # التوكن حقك ضفته لك هنا غصب يشتغل
           ngrok config add-authtoken 3BxZEFeh2YvU8EpfLgxMSNrQIIp_73TkNgdBFJq5UpgnZU2ye
-          # تشغيل البرنامج في الخلفية
-          Start-Process ngrok -ArgumentList "tcp 3389"
-          # أهم خطوة: الانتظار عشان ما يطلع خطأ Refused
-          Start-Sleep -Seconds 30
-          $tunnels = Invoke-WebRequest http://localhost:4040/api/tunnels | ConvertFrom-Json
-          $address = $tunnels.tunnels[0].public_url
-          Write-Host "========================================"
-          Write-Host "SUCCESS! CONNECT TO: $address"
-          Write-Host "USER: runneradmin"
-          Write-Host "PASS: Abdu1234@"
-          Write-Host "========================================"
           
-      - name: 4. Keep Alive
-        run: |
+          # تشغيل البرنامج
+          Start-Process ngrok -ArgumentList "tcp 3389"
+          
+          Write-Host "بنتظر دقيقة عشان السيرفر يفتح وما يرفض الاتصال..."
+          Start-Sleep -Seconds 60
+          
+          # بنحاول نطلع الرابط 10 مرات
+          for ($i=1; $i -le 10; $i++) {
+              try {
+                  $tunnels = Invoke-WebRequest http://localhost:4040/api/tunnels -UseBasicParsing | ConvertFrom-Json
+                  $address = $tunnels.tunnels[0].public_url
+                  if ($address) { 
+                      Write-Host "========================================"
+                      Write-Host "SUCCESS! YOUR ADDRESS: $address"
+                      Write-Host "USER: runneradmin"
+                      Write-Host "PASS: Abdu1234@"
+                      Write-Host "========================================"
+                      break 
+                  }
+              } catch {
+                  Write-Host "محاولة $i: لسه السيرفر بيجهز، بننتظر 10 ثواني..."
+                  Start-Sleep -Seconds 10
+              }
+          }
+          # الحفاظ على السيرفر شغال 6 ساعات
           $timeout = (Get-Date).AddHours(6)
           while ((Get-Date) -lt $timeout) { Start-Sleep 60 }
