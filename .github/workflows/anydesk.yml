@@ -8,19 +8,20 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: 1. Setup Remote Desktop
-        shell: powershell
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           net user runneradmin "Abdu1234@"
           add-localgroupmember -group "Remote Management Users" -member "runneradmin"
           
-      - name: 2. Install Ngrok & Connect
-        shell: powershell
+      - name: 2. Install Ngrok
         run: |
-          Invoke-WebRequest https://bin.equinox.io/c/b34edq6tiW5/ngrok-v3-stable-windows-amd64.zip -OutFile ngrok.zip
+          curl -L -o ngrok.zip https://bin.equinox.io/c/b34edq6tiW5/ngrok-v3-stable-windows-amd64.zip
           Expand-Archive ngrok.zip
-          ./ngrok.exe config add-authtoken 3BxZEFKfK8T50p2XmP8A0_3NHe7W8B5Z8Z8Z8Z8Z8Z # تأكد من الرمز كامل
+          
+      - name: 3. Start Connection
+        run: |
+          ./ngrok.exe config add-authtoken 3BxZEFeh2YvU8EpfLgxMSNrQIIp_73TkNgdBFJq5UpgnZU2ye
           Start-Process ./ngrok.exe -ArgumentList "tcp 3389"
           Start-Sleep -Seconds 15
           $tunnels = Invoke-WebRequest http://localhost:4040/api/tunnels | ConvertFrom-Json
@@ -31,7 +32,7 @@ jobs:
           Write-Host "PASS: Abdu1234@"
           Write-Host "========================================"
           
-      - name: 3. Keep Alive (6 Hours)
+      - name: 4. Keep Alive
         run: |
           $timeout = (Get-Date).AddHours(6)
           while ((Get-Date) -lt $timeout) { Start-Sleep 60 }
